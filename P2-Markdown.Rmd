@@ -1,0 +1,208 @@
+---
+title: "La Inseguridad Alimenticia y  Desnutrición Infantil"
+author: "Daniel Bolívar"
+date: "2022-12-01"
+output: html_document
+---
+
+# **Parte 1**
+
+Para esta investigación, la fuente utilizada es [Our World in Data](https://ourworldindata.org/hunger-and-undernourishment#definitions-of-food-insecurity), el topico escogido fue "Food and Agriculture" (Alimentos y agricultura) específicamente sobre "Hunger and Nourishment" (Hambruna y Nutrición), donde se escogieron los indicadores de la inseguridad alimenticia y la desnutrición infantil.
+
+-   **Desnutrición:** Según la FAO, la desnutrición significa que una persona no puede adquirir la suficiente cantidad de alimentos para alcanzar los requerimientos mínimos diarios de energía en su dieta, en un período de un año.
+
+-   **Inseguridad Alimentaria:** La inseguridad alimenticia se define como la situación donde las personas carecen de acceso seguro a alimentos sanos y nutritivos necesarios para al desarrollo y crecimiento normal y para una vida sana y activa. Cuando se habla de inseguridad alimentaria severa, se relaciona en mayor medida con una cantidad de alimentos insuficientes para lograr la ingesta mínima de energía.
+
+Para el desarrollo de este estudio, se analizaron los datos historicos de la cuota poblacional de la inseguridad alimentaria severa y la desnutricion infantil de las regiones de America Latina, el Caribe, Africa del Norte, Asia del Este y Norteamerica en los años 2015-2019, recogiendo un total de 20 observacion (5 por región).
+
+```{r include=FALSE}
+# Paquetes ----------------------------------------------------------------
+
+library(tidyverse)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(hrbrthemes)
+library(ggpubr)
+
+# Parte 1: Importar Datos ----------------------------------------------------------
+
+# Importamos el archivo desde el directorio donde se encuentra
+
+
+getwd()
+setwd('C:/Users/dabv1/OneDrive/Documents/Coding/R/Data Science UCAB')
+
+data_children <- read.csv("C:/Users/dabv1/OneDrive/Documents/Coding/R/Data Science UCAB/Prueba 2/share-of-children-underweight.csv")
+data_c_e <- read.csv("C:/Users/dabv1/OneDrive/Documents/Coding/R/Data Science UCAB/Prueba 2/prevalence-of-severe-food-insecurity-by-region.csv")
+
+regiones <- c('Latin America and Caribbean','East Asia and Pacific','Middle East and North Africa','North America')
+regiones_2 <- c('Latin America and the Caribbean (FAO)','Eastern Asia (FAO)','Northern Africa (FAO)','Northern America (FAO)' )
+years <- c('2015','2016','2017','2018','2019')
+
+
+```
+
+```{r include=FALSE}
+# Parte 2: Limpieza de datos -------------------------------------------------------
+
+#data children
+
+tabla_children <- data_children %>% 
+  filter(Year %in% years & Entity %in% regiones) %>% 
+  subset(select = - Code)
+
+tabla_children <- rename(tabla_children, 'Porcentaje de niños con peso insuficiente' = Prevalence.of.underweight..weight.for.age....of.children.under.5., 
+                'Region'=Entity, 'Periodo' = Year)
+
+tabla_children$`Porcentaje de niños con peso insuficiente` <- round(tabla_children$`Porcentaje de niños con peso insuficiente`, digits = 1)
+
+#Cambio de nombre de las variables
+
+for(i in 1:nrow(tabla_children)){
+  if(tabla_children$Region[i]=='Latin America and Caribbean'){
+    tabla_children$Region[i] <- 'América Latina y el Caribe'
+  } else if (tabla_children$Region[i] == 'East Asia and Pacific') {
+      tabla_children$Region[i] <- 'Asia del Este y Pacífico'
+  } else if (tabla_children$Region[i] == 'Middle East and North Africa'){
+      tabla_children$Region[i] <- 'Medio Oriente y África del Norte'
+  } else {
+    tabla_children$Region[i] <- 'Norteamérica'
+  }
+}
+
+
+#data food insecurity
+
+# Se eligen las regiones y años a estudiar, se elimina la columna code, se renombra una columna a "PP" 
+
+tabla_food <- data_c_e %>% 
+  filter(Year %in% years & Entity %in% regiones_2) %>% 
+  subset(select = - Code)
+
+tabla_food <- tabla_food <- rename(tabla_food, 'Porcentaje de poblacion con inseguridad alimentaria' =Prevalence.of.severe.food.insecurity.in.the.total.population..percent...annual.value....00210400....Value...006121....percent,
+                           'Region'=Entity, 'Periodo' = Year) 
+  
+#Cambio de nombre de las variables
+
+for(i in 1:nrow(tabla_food)){
+  if(tabla_food$Region[i]=='Latin America and the Caribbean (FAO)'){
+    tabla_food$Region[i] <- 'América Latina y el Caribe'
+  } else if (tabla_food$Region[i] == 'Eastern Asia (FAO)') {
+    tabla_food$Region[i] <- 'Asia del Este y Pacífico'
+  } else if (tabla_food$Region[i] == 'Northern Africa (FAO)'){
+    tabla_food$Region[i] <- 'Medio Oriente y África del Norte'
+  } else {
+    tabla_food$Region[i] <- 'Norteamérica'
+  }
+}
+
+
+# Union base de datos
+df_data <- full_join(tabla_food, tabla_children)
+
+```
+
+# **Parte 2**
+
+La desnutrición infantil es particularmente importante porque es un condicionante del desarrollo físico y cognitivo de los niños, ciertamente esto tiende a influir en el desenvolvimiento intelectual, desventajas funcionales y la vulnerabilidad a enfermedades. De manera que, un mayor porcentaje de niños desnutridos representa, en el largo palzo, un numero mayor de adultos que están condicionados involuntariamente y que puede tener cierta incidencia en el desenvolvimiento económico de un país. Esta idea tambien se puede aplicar a la insuficiencia alimenticia, en especial tomando en cuenta que la mala distribución de los alimentos en una región, la falta de disponibilidad de alimentos o alimentos inasequibles son unas de las mayores causas de la mala nutrición.
+
+Ciertamente, las regiones que tienen mayores indices de desnutrición e inseguridad alimenticia son las mas pobres, pero:
+
+\- **¿Han mejorado en las condiciones en estos últimos 5 años?**
+
+\- **¿Como se ha comportado Latinoamérica en los últimos 5 años?**
+
+\- **Si bien la inseguridad alimenticia es una de las principales causas de la desnutrición. ¿El comportamiento de estas variables es similar en el transcurso del periodo de estudio?**
+
+En primer lugar, se presenta como ha progresado la desnutrición infantil en las regiones desde el 2015 hasta el 2019:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p1 <- df_data %>% 
+  ggplot(aes(x = Periodo,
+           y = round(df_data$`Porcentaje de niños con peso insuficiente`, digits = 1),
+           col = Region)) +
+  scale_x_continuous(name = NULL)+
+  scale_y_continuous(name= 'Niños con insuficiencia de peso (%)',breaks = seq(0,7,2), limits = c(0,7))+
+  geom_line(size = 1 ,aes(linetype=Region))+
+  geom_text(label= round(df_data$`Porcentaje de niños con peso insuficiente`, digits = 1),
+            nudge_y = 0.3)+
+  geom_point(size = 3)+
+  ggtitle("Porcentaje de niños con insuficiencia alimentaria por región") +
+  theme(plot.title = element_text(hjust = 0.5))
+p1
+```
+
+En efecto, en el gráfico anterior se puede observar que las regiones con menos desarrollo son las que tienen mayor indice de desnutrición infantil, sin embargo, estas han ido disminuyendo a través de los años, siendo Asia del Este y Pacífico la región con mayor decrecimiento.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p2 <- df_data %>% 
+  ggplot(aes(x = Periodo,
+             y = round(df_data$`Porcentaje de poblacion con inseguridad alimentaria`, digits = 1),
+             col = Region)) +
+  scale_x_continuous(name = NULL)+
+  scale_y_continuous(name= 'Poblacion con inseguridad alimentaria (%)',
+                     breaks = seq(0,12,2), limits = c(0,11))+
+  geom_line(size = 1 ,aes(linetype=Region))+
+  geom_text(label= round(df_data$`Porcentaje de poblacion con inseguridad alimentaria`, 
+                         digits = 1), nudge_y = 0.4)+
+  geom_point(size = 3)+
+  ggtitle("Porcentaje de población con inseguridad alimentaria severa") +
+  theme(plot.title = element_text(hjust = 0.5))
+p2
+```
+
+En este caso, la inseguridad alimenticia ha tenido un tendencia distinta a la desnutrición infantil, en épocas y regiones donde la desnutrición infantil disminuyó la inseguridad alimenticia incrementó, de manera que, si bien la inseguridad alimenticia es un factor de la desnutrición, hay otros factores que han tenido una mayor influencia en el cálculo de la desnutrición.
+
+```{r include=FALSE}
+# Graficas comparativas entre America Latina y Medio Oriente---------------
+
+country <- c('América Latina y el Caribe', 'Asia del Este y Pacífico')
+
+# (%) NINOS CON PESO INSUFICIENTE EN AMERICA LATINA, EL CARIBE,  ASIA DEL ESTE Y PACÍFICO
+  
+p3 <- df_data %>% 
+  filter(Region %in% country) %>% 
+  ggplot(aes(Periodo, `Porcentaje de niños con peso insuficiente`, color = Region))+
+  scale_x_continuous(name = NULL)+
+  scale_y_continuous(name= 'Niños con peso insuficiente (%)',
+                     breaks = seq(0,7,2), limits = c(0,7))+
+  geom_line(size = 1)+
+  geom_point(size = 3)+
+  ggtitle("Porcentaje de niños con insuficiencia de peso") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+# INSEGURIDAD ALIMENTICIA EN AMERICA LATINA, EL CARIBE,  ASIA DEL ESTE Y PACÍFICO
+
+p4 <- df_data %>% 
+  filter(Region %in% country) %>% 
+  ggplot(aes(Periodo, `Porcentaje de poblacion con inseguridad alimentaria`, color = Region))+
+  scale_x_continuous(name = NULL)+
+  scale_y_continuous(name= 'Poblacion con inseguridad alimentaria (%)',
+                     breaks = seq(0,12,2), limits = c(0,11))+
+  geom_line(size = 1)+
+  geom_point(size = 3)+
+  ggtitle("Porcentaje de población con inseguridad alimentaria severa") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Comparando América Latina y el Caribe con Medio Oriente y África del Norte, se puede obsercar que ambas variables tienen resultados opuestos en cada región. En Latinoamérica hay una menor desnutrición infantil que en Asia del Este y Pacífico pero existe un mayor porcentaje de población con inseguridad alimentaria.
+
+```{r echo=FALSE}
+p5 <- ggpubr::ggarrange(p3+ ggtitle(""),p4 + ggtitle(""),
+                  labels = "AUTO",
+                  common.legend = T,
+                  legend = "bottom",
+                  align = "h",
+                  ncol = 2)
+p5
+```
+
+De estas observaciones se derivan múltiples interrogantes:
+
+1- **¿Que otros factores son tan importantes para la determinación de la desnutrición infantil como la inseguridad alimenticia?**
+
+2- **¿Por que hay comportamientos distintos en las variables? ¿En que medida afectan factores culturales propios de cada región en cada variable?**
+
+3- **¿Que medidas han tomado con la desnutrición infantil? y ¿ Por qué no ha tenido un efecto de la misma magnitud en la inseguridad alimentaria?**
